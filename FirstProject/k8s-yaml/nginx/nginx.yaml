@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-guobbtest
+  name: nginx-guobbtest-deployment
+  namespace: guobbtest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-guobbtest-80
+  template:
+    metadata:
+      labels:
+        app: nginx-guobbtest-80
+    spec:
+      containers:
+      - name: nginx-ttt
+        image: harbor.guobb.com/baseimages/nginx:18.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          protocol: TCP
+          name: http
+        - containerPort: 443
+          protocol: TCP
+          name: https
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+        - name: static-index
+          mountPath: /data
+          readOnly: false
+      volumes:
+      - name: static-index
+        nfs:
+          server: 192.168.5.196
+          path: /data/html
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-guobbtest-service
+  name: nginx-guobbtest-spec
+  namespace: guobbtest
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 40001
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+    nodePort: 40002
+  selector:
+    app: nginx-guobbtest-80
